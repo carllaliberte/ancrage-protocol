@@ -43,6 +43,25 @@ class Physics(unittest.TestCase):
             out = ancrage.verifier(p, today=date(2026, 9, 4))
             self.assertEqual(out["objet"], "figure")
 
+    @unittest.skipIf(ancrage.fcntl is None, "flock POSIX only")
+    def test_ecrire_calls_flock_exclusive(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "a.json"
+            calls = []
+            real = ancrage.fcntl.flock
+
+            def spy(fd, op):
+                calls.append(op)
+                return real(fd, op)
+
+            ancrage.fcntl.flock = spy
+            try:
+                ancrage.ecrire("figure", "2028-08-31", p)
+            finally:
+                ancrage.fcntl.flock = real
+            self.assertIn(ancrage.fcntl.LOCK_EX, calls)
+            self.assertIn(ancrage.fcntl.LOCK_UN, calls)
+
 
 if __name__ == "__main__":
     unittest.main()
