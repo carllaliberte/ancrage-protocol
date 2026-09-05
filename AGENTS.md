@@ -6,3 +6,5 @@ python3 ancrage.py verifier carte.ancrage.json
 ```
 
 Refuse a past date. A new date is a new act.
+
+`ecrire` uses a POSIX flock sidecar. Not on `lire`. Windows: no lock.
