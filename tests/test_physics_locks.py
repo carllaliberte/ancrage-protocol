@@ -34,6 +34,15 @@ class Physics(unittest.TestCase):
         card = json.loads(Path("examples/figure.ancrage.json").read_text())
         self.assertEqual(card["format"], "ANCRAGE-v0")
 
+    def test_ecrire_sidecar_lock(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "a.json"
+            ancrage.ecrire("figure", "2028-08-31", p)
+            lock = p.with_suffix(p.suffix + ".lock")
+            self.assertTrue(lock.is_file())
+            out = ancrage.verifier(p, today=date(2026, 9, 4))
+            self.assertEqual(out["objet"], "figure")
+
 
 if __name__ == "__main__":
     unittest.main()

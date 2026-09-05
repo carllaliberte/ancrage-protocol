@@ -12,6 +12,11 @@ from pathlib import Path
 FORMAT = "ANCRAGE-v0"
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
+try:
+    import fcntl
+except ImportError:
+    fcntl = None  # type: ignore
+
 
 def _parse_day(s: str) -> date:
     if not DATE.match(s):
@@ -20,15 +25,34 @@ def _parse_day(s: str) -> date:
     return date(y, m, d)
 
 
+def _lock(path: Path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = path.with_suffix(path.suffix + ".lock")
+    fh = open(lock_path, "a+", encoding="utf-8")
+    if fcntl is not None:
+        fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+    return fh
+
+
+def _unlock(fh) -> None:
+    if fcntl is not None:
+        fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+    fh.close()
+
+
 def ecrire(objet: str, avant: str, dest: Path) -> dict:
-    day = _parse_day(avant)
-    if day <= date.today():
-        raise SystemExit("refus: horizon deja passe")
-    if dest.exists():
-        raise SystemExit("refus: nouvel acte requis")
-    card = {"format": FORMAT, "objet": objet, "avant": avant}
-    dest.write_text(json.dumps(card, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    return card
+    fh = _lock(dest)
+    try:
+        day = _parse_day(avant)
+        if day <= date.today():
+            raise SystemExit("refus: horizon deja passe")
+        if dest.exists():
+            raise SystemExit("refus: nouvel acte requis")
+        card = {"format": FORMAT, "objet": objet, "avant": avant}
+        dest.write_text(json.dumps(card, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        return card
+    finally:
+        _unlock(fh)
 
 
 def verifier(path: Path, today: date | None = None) -> dict:

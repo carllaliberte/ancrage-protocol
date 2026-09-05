@@ -15,6 +15,8 @@ python3 ancrage.py verifier carte.ancrage.json
 python3 ancrage.py lire carte.ancrage.json
 ```
 
+`ecrire` prend un verrou sidecar POSIX (`carte.ancrage.json.lock`) via `fcntl.flock`, comme mesure. Pas sur `lire` / `verifier`. Windows : pas de lock. Un `.lock` orphelin est inoffensif.
+
 `verifier` refuse une date déjà passée.
 Reculer la date sans nouvel acte = interdit (autre ancrage).
 
