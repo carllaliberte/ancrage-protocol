@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from datetime import date
 from pathlib import Path
+from unittest.mock import MagicMock
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -42,6 +43,24 @@ class Physics(unittest.TestCase):
             self.assertTrue(lock.is_file())
             out = ancrage.verifier(p, today=date(2026, 9, 4))
             self.assertEqual(out["objet"], "figure")
+
+    def test_ecrire_calls_flock_ex(self):
+        fake = MagicMock()
+        fake.LOCK_EX = 2
+        fake.LOCK_UN = 8
+        orig = ancrage.fcntl
+        ancrage.fcntl = fake
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                p = Path(d) / "a.json"
+                ancrage.ecrire("figure", "2028-08-31", p)
+        finally:
+            ancrage.fcntl = orig
+        ops = [c.args[1] for c in fake.flock.call_args_list]
+        self.assertIn(fake.LOCK_EX, ops)
+        self.assertIn(fake.LOCK_UN, ops)
+        self.assertEqual(ops[0], fake.LOCK_EX)
+        self.assertEqual(ops[-1], fake.LOCK_UN)
 
 
 if __name__ == "__main__":
