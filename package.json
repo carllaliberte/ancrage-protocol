@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/crypto-rail.test.mjs"
+    "test": "node --test test/crypto-rail.test.mjs test/crypto-rail-edge.test.mjs"
   }
 }

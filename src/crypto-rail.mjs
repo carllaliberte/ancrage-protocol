@@ -29,8 +29,8 @@ export class PostQuantumCryptoRail {
   }
 
   write(path) {
-    const p = String(path || "");
-    if (FORBIDDEN.test(p)) {
+    const p = String(path || "").replace(/\0/g, "");
+    if (/(juge|flux)\.v0\.json/i.test(p)) {
       return { ok: false, code: "IMMUTABLE_V0", path: p, write: "DENIED" };
     }
     return { ok: false, code: "AI_WRITE_DENIED", path: p, write: "DENIED" };
